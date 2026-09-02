@@ -19,6 +19,7 @@ from categorize.embed_worker import EmbedWorker
 from core import config, db, http
 from core.log import get
 from discovery.certstream_listener import CertstreamListener
+from discovery.ct_log_poller import CtLogPoller
 from discovery.shopify_detector import Detector
 from ingest.catalog_worker import CatalogWorker
 
@@ -27,6 +28,8 @@ log = get("run_all")
 
 def _tasks() -> dict[str, object]:
     jobs: dict[str, object] = {}
+    if config.ENABLE_CT_POLLER:
+        jobs["ct_poller"] = CtLogPoller().run_forever
     if config.ENABLE_CERTSTREAM:
         jobs["certstream"] = CertstreamListener().run
     if config.ENABLE_DETECTOR:

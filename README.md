@@ -15,8 +15,8 @@ Kayıt olmadan gezilebilir. Pricing sayfası, plan, paywall veya kota yok.
 
 ```
                     ┌──────────────────────┐
-   CT logs  ───────▶│  certstream_listener │──┐
-   (wss)            └──────────────────────┘  │
+   CT logs  ───────▶│  ct_log_poller       │──┐
+   (RFC 6962 HTTP)  └──────────────────────┘  │
                                               ▼
                                      ┌──────────────────┐
                                      │ discovery_queue  │
@@ -60,6 +60,7 @@ Web Vercel'de çalışır ve aynı veritabanından yalnızca **okur**.
 | Web + API | Next.js 16 (App Router), TypeScript, Tailwind v4 |
 | DB erişimi (web) | `postgres` (postgres.js), ham SQL — ORM yok |
 | Crawler | Python 3.12, `httpx`, `asyncio`, `asyncpg` |
+| Keşif | CT logları doğrudan (RFC 6962) — `certstream` public sunucusu ölü, varsayılan kapalı |
 | Kuyruk | Postgres tablosu (`discovery_queue`) — Redis yok |
 | Kategorizasyon | `sentence-transformers` / `all-MiniLM-L6-v2`, CPU |
 
@@ -88,8 +89,9 @@ cp .env.example .env
 Opsiyonel ayarlar (`crawler/core/config.py` içinde varsayılanları var):
 `HOST_MIN_INTERVAL_S`, `CDN_MIN_INTERVAL_S`, `GLOBAL_CONCURRENCY`,
 `DETECTOR_BATCH`, `INGEST_BATCH`, `EMBED_BATCH`, `NICHE_MIN_SCORE`,
-`PHASH_MAX_DISTANCE`, `ENABLE_CERTSTREAM`, `ENABLE_DETECTOR`, `ENABLE_INGEST`,
-`ENABLE_EMBED`, `ENABLE_SCHEDULER`.
+`PHASH_MAX_DISTANCE`, `CT_BATCH`, `CT_MAX_LOGS`, `ENABLE_CT_POLLER`,
+`ENABLE_CERTSTREAM`, `ENABLE_DETECTOR`, `ENABLE_INGEST`, `ENABLE_EMBED`,
+`ENABLE_SCHEDULER`.
 
 **Hangi Supabase bağlantı dizesi nerede?** Supabase panelinde
 *Project → Connect* altında üç seçenek var:
@@ -136,7 +138,7 @@ pip install -r requirements.txt
 export PYTHONPATH=$PWD
 
 python -m run_all                      # hepsi tek süreçte
-python -m discovery.certstream_listener   # tek tek de çalışır
+python -m discovery.ct_log_poller         # tek tek de çalışır
 python -m discovery.shopify_detector
 python -m ingest.catalog_worker
 python -m categorize.embed_worker

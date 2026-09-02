@@ -1,4 +1,10 @@
-"""Certificate Transparency akisini dinleyip discovery_queue'yu besler.
+"""certstream akisini dinleyip discovery_queue'yu besler (OPSIYONEL kaynak).
+
+DIKKAT: `wss://certstream.calidog.io` public sunucusu baglantiyi kabul ediyor
+ama hicbir mesaj gondermiyor. Bu yuzden varsayilan olarak KAPALI
+(ENABLE_CERTSTREAM=false); birincil kesif kaynagi discovery/ct_log_poller.py.
+Kendi certstream sunucunu calistiriyorsan CERTSTREAM_URL'i verip bu worker'i
+acabilirsin.
 
 Tek basina:  python -m discovery.certstream_listener
 """

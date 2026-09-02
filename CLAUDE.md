@@ -11,6 +11,7 @@ eden ve **katalog aktivitesini** izleyen ücretsiz araştırma platformu.
 | Web + API | Next.js (App Router), TypeScript, Tailwind, Route Handlers |
 | DB erişimi (web) | `postgres` (postgres.js), ham SQL — ORM yok |
 | Crawler | Python 3.12, `httpx` (async), `asyncio`, `asyncpg` |
+| Keşif | CT logları doğrudan (RFC 6962 `get-entries`) — certstream public sunucusu ölü |
 | Queue | Postgres tabanlı job tablosu (`discovery_queue`) — Redis yok |
 | Kategorizasyon | `sentence-transformers` / `all-MiniLM-L6-v2`, lokal CPU |
 | Deploy | web → Vercel, crawler → tek VPS (Docker Compose) |

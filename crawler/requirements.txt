@@ -2,7 +2,8 @@
 httpx[http2]==0.28.1
 asyncpg==0.30.0
 psycopg[binary]==3.2.9         # sadece db/migrate.py için
-websockets==15.0.1             # certstream
+websockets==15.0.1             # opsiyonel certstream kaynagi
+cryptography==45.0.5           # CT log kayitlarindaki X.509 SAN ayristirma
 APScheduler==3.11.0
 python-dotenv==1.1.0
 numpy==2.2.6

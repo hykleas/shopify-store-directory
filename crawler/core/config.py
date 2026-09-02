@@ -59,11 +59,21 @@ EMBED_MODEL: str = os.environ.get("EMBED_MODEL", "sentence-transformers/all-Mini
 NICHE_MIN_SCORE: float = float(os.environ.get("NICHE_MIN_SCORE", "0.35"))
 PHASH_MAX_DISTANCE: int = _int("PHASH_MAX_DISTANCE", 6)
 
+# CT loglarini dogrudan okuma (birincil kesif kaynagi).
+CT_LOG_LIST_URL: str = os.environ.get(
+    "CT_LOG_LIST_URL", "https://www.gstatic.com/ct/log_list/v3/log_list.json"
+)
+CT_BATCH: int = _int("CT_BATCH", 256)      # get-entries basina kayit
+CT_MAX_LOGS: int = _int("CT_MAX_LOGS", 9)  # es zamanli takip edilen log sayisi
+
+# certstream: public sunucu (calidog) olu, varsayilan kapali. Kendi certstream
+# sunucunu calistiriyorsan CERTSTREAM_URL'i verip ENABLE_CERTSTREAM=true yap.
 CERTSTREAM_URL: str = os.environ.get("CERTSTREAM_URL", "wss://certstream.calidog.io/")
 CERTSTREAM_BATCH: int = _int("CERTSTREAM_BATCH", 500)
 
 # Hangi worker'lar run_all içinde çalışsın (VPS'te bazılarını kapatmak için).
-ENABLE_CERTSTREAM: bool = _bool("ENABLE_CERTSTREAM", True)
+ENABLE_CT_POLLER: bool = _bool("ENABLE_CT_POLLER", True)
+ENABLE_CERTSTREAM: bool = _bool("ENABLE_CERTSTREAM", False)
 ENABLE_DETECTOR: bool = _bool("ENABLE_DETECTOR", True)
 ENABLE_INGEST: bool = _bool("ENABLE_INGEST", True)
 ENABLE_EMBED: bool = _bool("ENABLE_EMBED", True)
