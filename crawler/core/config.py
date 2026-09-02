@@ -55,8 +55,15 @@ INGEST_BATCH: int = _int("INGEST_BATCH", 25)
 INGEST_CONCURRENCY: int = _int("INGEST_CONCURRENCY", 8)
 INGEST_MAX_PAGES: int = _int("INGEST_MAX_PAGES", 20)
 EMBED_BATCH: int = _int("EMBED_BATCH", 256)
-EMBED_MODEL: str = os.environ.get("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+# Cok dilli: magazalar dunya genelinde, urun basliklari Ingilizce degil.
+# all-MiniLM-L6-v2 Romence/Turkce basliklari rastgele nislere atiyordu.
+# Ayni 384 boyut -> sema degismiyor.
+EMBED_MODEL: str = os.environ.get(
+    "EMBED_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+)
 NICHE_MIN_SCORE: float = float(os.environ.get("NICHE_MIN_SCORE", "0.35"))
+# Magaza baglamindan tahmin edilen kategoriye ne kadar guvenilirse dayatilir.
+STORE_CONTEXT_MIN_SCORE: float = float(os.environ.get("STORE_CONTEXT_MIN_SCORE", "0.14"))
 PHASH_MAX_DISTANCE: int = _int("PHASH_MAX_DISTANCE", 6)
 
 # CT loglarini dogrudan okuma (birincil kesif kaynagi).
@@ -77,6 +84,7 @@ ENABLE_CERTSTREAM: bool = _bool("ENABLE_CERTSTREAM", False)
 ENABLE_DETECTOR: bool = _bool("ENABLE_DETECTOR", True)
 ENABLE_INGEST: bool = _bool("ENABLE_INGEST", True)
 ENABLE_EMBED: bool = _bool("ENABLE_EMBED", True)
+ENABLE_STORE_CONTEXT: bool = _bool("ENABLE_STORE_CONTEXT", True)
 ENABLE_SCHEDULER: bool = _bool("ENABLE_SCHEDULER", True)
 
 LOG_LEVEL: str = os.environ.get("LOG_LEVEL", "INFO").upper()

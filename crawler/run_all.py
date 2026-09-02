@@ -16,6 +16,7 @@ import heartbeat
 import scheduler
 from categorize.assign_worker import AssignWorker
 from categorize.embed_worker import EmbedWorker
+from categorize.store_context import StoreContextWorker
 from core import config, db, http
 from core.log import get
 from discovery.certstream_listener import CertstreamListener
@@ -38,6 +39,10 @@ def _tasks() -> dict[str, object]:
         jobs["ingest"] = CatalogWorker().run_forever
     if config.ENABLE_EMBED:
         jobs["embed"] = EmbedWorker().run_forever
+        # Magaza baglami atamadan ONCE hazir olmali; ikisi de kendi dongusunde
+        # bekleyerek ilerliyor, sirayi veri belirliyor.
+        if config.ENABLE_STORE_CONTEXT:
+            jobs["store_context"] = StoreContextWorker().run_forever
         jobs["assign"] = AssignWorker().run_forever
     if config.ENABLE_SCHEDULER:
         jobs["scheduler"] = scheduler.run_forever

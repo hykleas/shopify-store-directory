@@ -20,10 +20,13 @@ log = get("categorize.assign")
 
 ASSIGN_SQL = """
 WITH batch AS (
-  SELECT id, embedding
-  FROM products
-  WHERE category IS NULL AND embedding IS NOT NULL
-  ORDER BY first_seen_at DESC
+  -- Magazanin baglamdan tahmin edilen kategorisi urun icin onsel olarak
+  -- kullanilir: nis SADECE o kategorinin nisleri arasinda aranir.
+  SELECT p.id, p.embedding, s.context_category
+  FROM products p
+  JOIN stores s ON s.id = p.store_id
+  WHERE p.category IS NULL AND p.embedding IS NOT NULL
+  ORDER BY p.first_seen_at DESC
   LIMIT $1
 ),
 best AS (
@@ -36,6 +39,7 @@ best AS (
     SELECT category, niche, embedding
     FROM niche_vectors
     WHERE model = $2
+      AND (b.context_category IS NULL OR category = b.context_category)
     ORDER BY embedding <=> b.embedding
     LIMIT 1
   ) nv

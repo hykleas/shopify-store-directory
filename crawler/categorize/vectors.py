@@ -37,7 +37,7 @@ def load_model() -> Any:
 
                 log.info("model yukleniyor: %s (cpu)", config.EMBED_MODEL)
                 _model = SentenceTransformer(config.EMBED_MODEL, device="cpu")
-                _model.max_seq_length = 96  # urun basliklari kisa; hiz icin kirp
+                _model.max_seq_length = 128  # product_type + baslik + etiketler sigmali
                 log.info("model hazir")
     return _model
 
@@ -67,66 +67,70 @@ def _cache_path() -> pathlib.Path:
     return CACHE_DIR / ("niches_" + taxonomy_fingerprint() + ".npz")
 
 
-def build_niche_vectors(force: bool = False) -> tuple[list[tuple[str, str]], np.ndarray]:
-    """(kategori, nis) listesi ve karsilik gelen vektor matrisi."""
-    labels = taxonomy.niches()
+def niche_examples() -> list[tuple[str, str, int, str]]:
+    """(kategori, nis, sira, metin) - her ornek ayri satir.
+
+    Ortalama ALMIYORUZ: bir nisin ornekleri ortalanınca vektor "urun basligi"
+    ortak yonune yakinsayip konuyu ayirt etmeyi birakiyordu. Ornekler tek tek
+    tutulur, atamada en yakin ornek secilir (bkz. 007 migration).
+    """
+    out: list[tuple[str, str, int, str]] = []
+    for (category, niche), titles in zip(taxonomy.niches(), taxonomy.examples(), strict=True):
+        # Etiketin kendisi de bir ornek: urun metni cogu zaman saticinin
+        # kategori adiyla basliyor ("Hair Care"), ornek basliga benzemiyor.
+        texts = [category + ". " + niche, niche, *titles]
+        for idx, text in enumerate(texts):
+            out.append((category, niche, idx, text))
+    return out
+
+
+def build_niche_vectors(force: bool = False) -> tuple[list[tuple[str, str, int, str]], np.ndarray]:
+    """Ornek listesi ve her ornegin vektoru."""
+    rows = niche_examples()
     cache = _cache_path()
 
     if cache.exists() and not force:
         data = np.load(cache, allow_pickle=False)
         matrix = data["vectors"]
-        if matrix.shape[0] == len(labels):
-            log.info("nis vektorleri cache'ten okundu (%d nis)", len(labels))
-            return labels, matrix
+        if matrix.shape[0] == len(rows):
+            log.info("nis vektorleri cache'ten okundu (%d ornek)", len(rows))
+            return rows, matrix
         log.warning("cache boyutu uyusmuyor, yeniden hesaplaniyor")
 
     log.info("nis vektorleri hesaplaniyor: %s", taxonomy.summary())
-    groups = taxonomy.examples()
-    flat: list[str] = []
-    spans: list[tuple[int, int]] = []
-    for titles in groups:
-        start = len(flat)
-        flat.extend(titles)
-        spans.append((start, len(flat)))
-
-    all_vecs = encode(flat)
-    matrix = np.zeros((len(labels), all_vecs.shape[1]), dtype=np.float32)
-    for i, (start, end) in enumerate(spans):
-        mean = all_vecs[start:end].mean(axis=0)
-        norm = float(np.linalg.norm(mean)) or 1.0
-        matrix[i] = mean / norm
-
+    matrix = encode([text for *_, text in rows], 128)
     np.savez_compressed(cache, vectors=matrix)
-    log.info("nis vektorleri cache'lendi: %s", cache.name)
-    return labels, matrix
+    log.info("nis vektorleri cache'lendi: %s (%d ornek)", cache.name, len(rows))
+    return rows, matrix
 
 
 UPSERT_SQL = """
-INSERT INTO niche_vectors (model, category, niche, embedding)
-VALUES ($1, $2, $3, $4::vector)
-ON CONFLICT (model, category, niche) DO UPDATE SET
-  embedding = EXCLUDED.embedding,
-  built_at  = now()
+INSERT INTO niche_vectors (model, category, niche, example_idx, example_text, embedding)
+VALUES ($1, $2, $3, $4, $5, $6::vector)
+ON CONFLICT (model, category, niche, example_idx) DO UPDATE SET
+  example_text = EXCLUDED.example_text,
+  embedding    = EXCLUDED.embedding,
+  built_at     = now()
 """
 
 
 async def sync_to_db(force: bool = False) -> int:
     """Nis vektorlerini DB'ye yazar; atama SQL tarafinda yapilacak."""
+    expected = len(niche_examples())
     existing = await db.fetchval(
         "SELECT count(*) FROM niche_vectors WHERE model = $1", config.EMBED_MODEL
     )
-    labels = taxonomy.niches()
-    if existing == len(labels) and not force:
-        log.info("nis vektorleri zaten guncel (%d)", existing)
+    if existing == expected and not force:
+        log.info("nis vektorleri zaten guncel (%d ornek)", existing)
         return existing
 
-    labels, matrix = build_niche_vectors(force=force)
+    examples, matrix = build_niche_vectors(force=force)
     rows = [
-        (config.EMBED_MODEL, cat, niche, db.vector_literal(matrix[i]))
-        for i, (cat, niche) in enumerate(labels)
+        (config.EMBED_MODEL, cat, niche, idx, text, db.vector_literal(matrix[i]))
+        for i, (cat, niche, idx, text) in enumerate(examples)
     ]
     await db.executemany(UPSERT_SQL, rows)
-    log.info("%d nis vektoru DB'ye yazildi", len(rows))
+    log.info("%d nis ornegi DB'ye yazildi", len(rows))
     return len(rows)
 
 
