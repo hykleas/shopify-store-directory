@@ -1,8 +1,17 @@
-"""Embedding'i olan urunlere kategori/nis atar.
+"""Embedding'i olan urunlere KATEGORI atar.
+
+Nis (220 kirilim) atamasi bilincli olarak yapilmiyor - bkz. DECISIONS #26.
+Kisaca: kullandigimiz embedding modeli Ingilizce olmayan urun basliklarini
+dogru nise esleyemiyor ve olculen dogruluk kabul edilebilir degildi.
+27 kategori kirilimi hem guvenilir hem de filtrelemek icin yeterli.
+
+Kategori kaynagi, oncelik sirasiyla:
+  1. Magazanin baglamdan belirlenen kategorisi (stores.context_category) -
+     olculen dogruluk 11/14 magaza. Magazalar neredeyse her zaman tek nisli.
+  2. O yoksa urunun kendi embedding'ine en yakin taksonomi ornegi.
 
 Benzerlik hesabi tamamen pgvector tarafinda: 384 boyutlu vektorleri agdan
-tasimak yerine `<=>` (kosinus mesafesi) ile en yakin nisi DB seciyor.
-Skor NICHE_MIN_SCORE altindaysa urun 'uncategorized' kalir.
+tasimak yerine `<=>` (kosinus mesafesi) ile en yakini DB seciyor.
 
 Tek basina:  python -m categorize.assign_worker
 """
@@ -20,8 +29,6 @@ log = get("categorize.assign")
 
 ASSIGN_SQL = """
 WITH batch AS (
-  -- Magazanin baglamdan tahmin edilen kategorisi urun icin onsel olarak
-  -- kullanilir: nis SADECE o kategorinin nisleri arasinda aranir.
   SELECT p.id, p.embedding, s.context_category
   FROM products p
   JOIN stores s ON s.id = p.store_id
@@ -31,22 +38,24 @@ WITH batch AS (
 ),
 best AS (
   SELECT b.id,
-         nv.category,
-         nv.niche,
-         1 - (b.embedding <=> nv.embedding) AS score
+         COALESCE(b.context_category, nv.category) AS category,
+         -- Magaza baglami varsa ona guveniyoruz; yoksa urunun kendi skoru.
+         CASE WHEN b.context_category IS NOT NULL
+              THEN 1.0
+              ELSE 1 - (b.embedding <=> nv.embedding)
+         END AS score
   FROM batch b
   CROSS JOIN LATERAL (
-    SELECT category, niche, embedding
+    SELECT category, embedding
     FROM niche_vectors
     WHERE model = $2
-      AND (b.context_category IS NULL OR category = b.context_category)
     ORDER BY embedding <=> b.embedding
     LIMIT 1
   ) nv
 )
 UPDATE products p
 SET category = CASE WHEN best.score >= $3 THEN best.category ELSE $4 END,
-    niche    = CASE WHEN best.score >= $3 THEN best.niche    ELSE NULL END
+    niche    = NULL
 FROM best
 WHERE p.id = best.id
 RETURNING p.id, p.category
@@ -64,6 +73,7 @@ FROM (
   ORDER BY store_id, count(*) DESC, category
 ) top
 WHERE s.id = top.store_id
+  AND s.context_category IS NULL          -- baglam varsa o kazanir
   AND s.primary_category IS DISTINCT FROM top.category
 """
 

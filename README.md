@@ -32,7 +32,7 @@ Kayıt olmadan gezilebilir. Pricing sayfası, plan, paywall veya kota yok.
                    └──────────────────────┘  │ products │
                                              │ variants │
                     ┌──────────────────────┐ └──────────┘
-                    │  embed + assign      │──────┤  pgvector, 219 niş
+                    │  embed + assign      │──────┤  pgvector, 27 kategori
                     └──────────────────────┘      │
                     ┌──────────────────────┐      │
                     │  daily_rollup        │──────┤  store_metrics
@@ -62,7 +62,7 @@ Web Vercel'de çalışır ve aynı veritabanından yalnızca **okur**.
 | Crawler | Python 3.12, `httpx`, `asyncio`, `asyncpg` |
 | Keşif | CT logları doğrudan (RFC 6962) — `certstream` public sunucusu ölü, varsayılan kapalı |
 | Kuyruk | Postgres tablosu (`discovery_queue`) — Redis yok |
-| Kategorizasyon | `sentence-transformers` / `all-MiniLM-L6-v2`, CPU |
+| Kategorizasyon | `sentence-transformers` / `paraphrase-multilingual-MiniLM-L12-v2`, CPU — yalnızca kategori |
 
 ```
 /crawler   Python worker'ları (VPS)

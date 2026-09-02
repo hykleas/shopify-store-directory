@@ -13,7 +13,7 @@ eden ve **katalog aktivitesini** izleyen ücretsiz araştırma platformu.
 | Crawler | Python 3.12, `httpx` (async), `asyncio`, `asyncpg` |
 | Keşif | CT logları doğrudan (RFC 6962 `get-entries`) — certstream public sunucusu ölü |
 | Queue | Postgres tabanlı job tablosu (`discovery_queue`) — Redis yok |
-| Kategorizasyon | `sentence-transformers` / `all-MiniLM-L6-v2`, lokal CPU |
+| Kategorizasyon | `sentence-transformers` / `paraphrase-multilingual-MiniLM-L12-v2`, lokal CPU. **Yalnızca kategori (27), niş atanmıyor** — bkz. DECISIONS #26 |
 | Deploy | web → Vercel, crawler → tek VPS (Docker Compose) |
 | PostgREST | Kullanılmıyor. Tüm tablolarda policy'siz RLS açık (`005`), Supabase anon anahtarı hiçbir şey göremez. |
 

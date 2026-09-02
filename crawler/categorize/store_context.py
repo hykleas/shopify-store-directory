@@ -50,7 +50,12 @@ SELECT title FROM products WHERE store_id = $1 ORDER BY md5(id::text) LIMIT 12
 
 SAVE_SQL = """
 UPDATE stores
-SET context_category = $2, context_score = $3, context_at = now()
+SET context_category = $2,
+    context_score    = $3,
+    context_at       = now(),
+    -- Magaza kategorisi artik dogrudan baglamdan geliyor; urun modundan
+    -- turetmek hem gec kaliyor hem de daha kotu (bkz. DECISIONS #27).
+    primary_category = COALESCE($2, primary_category)
 WHERE id = $1
 """
 

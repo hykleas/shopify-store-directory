@@ -1,35 +1,34 @@
 # TODO
 
-Atlanan veya elle yapılması gereken işler.
+## Senin yapman gereken
 
-## Kimlik bilgisi bekleyenler
+- [ ] **CI workflow push'u** — `gh` token'inda `workflow` scope'u yok,
+      `.github/workflows/ci.yml` tasiyan commit reddedildi.
+      `gh auth refresh -h github.com -s workflow` sonra `git push`.
+- [ ] **Crawler VPS kurulumu** — `crawler/DEPLOY.md`.
+- [ ] Kaldirma taleplerini haftada bir kontrol et (`manage.py removals`).
 
-- [ ] **GitHub Actions workflow push'u** — `gh` token'ında `workflow` scope'u yok,
-      `.github/workflows/ci.yml` taşıyan commit reddedildi. Repo ve kodun geri
-      kalanı GitHub'da. Çözüm: `gh auth refresh -s workflow` sonra `git push`.
-- [ ] **Supabase `DATABASE_URL`** — migration'lar (`db/001`–`005`) henüz gerçek bir
-      veritabanına uygulanmadı.
-- [ ] **`vercel login`** — proje bağlanmadı, env değişkenleri eklenmedi,
-      production deploy alınmadı.
+## Uzun kosuda olculecek kabul kriterleri
 
-## Kimlik bilgisi geldikten sonra doğrulanacak kabul kriterleri
+Bu makinede ~1 saatlik kosu yapildi; asagidakiler VPS'te surekli kosuda
+dogrulanmali.
 
-Bunlar canlı DB olmadan test edilemedi:
+- [ ] Faz 2 — 500 magaza katalogu / >20.000 urun (su an 71 magaza, 7.458 urun).
+- [ ] Faz 4 — 100 magaza icin 7 gunluk `store_metrics` (su an 1 gun, 71 magaza).
+      Urun eslestirme (phash) ilk tam turunu VPS'te tamamlayacak.
+- [ ] Faz 5 — `EXPLAIN ANALYZE` ile 1M satirda `/stores` < 300ms.
+- [ ] Faz 6 — Lighthouse performance > 85.
 
-- [ ] Faz 1 — 1 saat çalıştır: `discovery_queue` > 5.000, `stores` > 50,
-      rastgele 10 mağaza elle Shopify doğrulaması.
-- [ ] Faz 2 — 500 mağaza katalogu, `products` > 20.000, fiyat/varyant karşılaştırması.
-- [ ] Faz 3 — 20.000 ürün kategorize, 50 örnekte ≥40 doğru, `uncategorized` < %15.
-      `NICHE_MIN_SCORE` (varsayılan 0.35) bu ölçüme göre ayarlanmalı.
-- [ ] Faz 4 — 100 mağaza için 7 günlük `store_metrics`, ürün eşleştirme kontrolü.
-- [ ] Faz 5 — `EXPLAIN ANALYZE` ile 1M satırda `/stores` < 300ms doğrulaması.
-- [ ] Faz 6 — Lighthouse performance > 85 (canlı URL gerekiyor).
+## Bilincli olarak yapilmayanlar
 
-## Ortam notları
+- **Nis atamasi** (DECISIONS #26). Yalnizca 27 kategori ataniyor.
+  Ingilizce olmayan magazalarda kategori de yanilabiliyor
+  (`emrababy.ro` -> "Outdoor & Adventure", dogrusu "Baby & Kids").
+  Acmak icin gereken: urun metnini Ingilizce'ye ceviren bir NMT adimi
+  (~300MB model, VPS'te ek RAM/CPU).
+- **certstream** worker'i duruyor ama kapali (public sunucu olu, DECISIONS #21).
 
-- Bu geliştirme makinesinde Docker ve `psql` kurulu değil; `docker-compose.yml`
-  ve `crawler/Dockerfile` yazıldı ama lokal olarak çalıştırılamadı. VPS'te
-  `crawler/DEPLOY.md` adımları izlenmeli.
-- `sentence-transformers` (torch) lokale kurulmadı; Docker imajında CPU-only
-  wheel ile kuruluyor. `categorize/*` modülleri import edilmeden derleniyor,
-  ilk gerçek çalıştırma VPS'te olacak.
+## Ortam notlari
+
+- Bu gelistirme makinesinde Docker ve `psql` kurulu degil; `docker-compose.yml`
+  ve `crawler/Dockerfile` yazildi ama lokal olarak calistirilamadi.

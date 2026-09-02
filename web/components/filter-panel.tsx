@@ -139,16 +139,20 @@ function FilterForm({
         </Select>
       </Field>
 
-      <Field label={t("niche")}>
-        <Select value={draft.niche ?? ""} onChange={(e) => set("niche", e.target.value)}>
-          <option value="">{t("any")}</option>
-          {niches.map((n) => (
-            <option key={n.value} value={n.value}>
-              {n.value} ({n.count})
-            </option>
-          ))}
-        </Select>
-      </Field>
+      {/* Nis atamasi kapali (bkz. DECISIONS #26); nis verisi yoksa alan hic
+          gosterilmez, ileride acilirsa kendiliginden geri gelir. */}
+      {niches.length > 0 ? (
+        <Field label={t("niche")}>
+          <Select value={draft.niche ?? ""} onChange={(e) => set("niche", e.target.value)}>
+            <option value="">{t("any")}</option>
+            {niches.map((n) => (
+              <option key={n.value} value={n.value}>
+                {n.value} ({n.count})
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-2">
         <Field label={t("country")}>
