@@ -1,0 +1,69 @@
+# Lokal geliştirme + VPS crawler stack'i.
+# Web (Next.js) burada YOK — o Vercel'e deploy edilir.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: sd_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sd
+      POSTGRES_PASSWORD: sd
+      POSTGRES_DB: storedir
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sd -d storedir"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: json-file
+      options: { max-size: "50m", max-file: "3" }
+
+  # Migration'ları uygular ve çıkar. `docker compose up` her seferinde çalıştırır.
+  migrate:
+    build:
+      context: .
+      dockerfile: crawler/Dockerfile
+    container_name: sd_migrate
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://sd:sd@postgres:5432/storedir}
+    volumes:
+      - ./db:/app/db:ro
+    command: ["python", "db/migrate.py"]
+    restart: "no"
+    logging:
+      driver: json-file
+      options: { max-size: "50m", max-file: "3" }
+
+  crawler:
+    build:
+      context: .
+      dockerfile: crawler/Dockerfile
+    container_name: sd_crawler
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://sd:sd@postgres:5432/storedir}
+      PYTHONUNBUFFERED: "1"
+      HF_HOME: /app/.model_cache
+    volumes:
+      - modelcache:/app/.model_cache
+      - nichecache:/app/categorize/.vectors
+    command: ["python", "-m", "run_all"]
+    logging:
+      driver: json-file
+      options: { max-size: "50m", max-file: "3" }
+
+volumes:
+  pgdata:
+  modelcache:
+  nichecache:

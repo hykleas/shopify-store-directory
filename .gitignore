@@ -1,0 +1,31 @@
+# node
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+
+# model / embedding cache
+.cache/
+crawler/.model_cache/
+crawler/categorize/.vectors/
+
+# env
+.env
+.env.*
+!.env.example
+
+# logs & os
+*.log
+logs/
+.DS_Store
+Thumbs.db

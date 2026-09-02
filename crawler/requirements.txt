@@ -1,0 +1,16 @@
+# --- runtime ---
+httpx[http2]==0.28.1
+asyncpg==0.30.0
+psycopg[binary]==3.2.9         # sadece db/migrate.py için
+websockets==15.0.1             # certstream
+APScheduler==3.11.0
+python-dotenv==1.1.0
+numpy==2.2.6
+Pillow==11.3.0
+ImageHash==4.3.2
+
+# --- kategorizasyon (CPU) ---
+sentence-transformers==3.4.1
+
+# --- dev ---
+ruff==0.12.2
