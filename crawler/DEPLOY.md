@@ -29,12 +29,16 @@ nano .env
 Doldurulacaklar:
 
 ```
-DATABASE_URL=postgresql://<user>:<pass>@<neon-host>/<db>?sslmode=require
+# Supabase > Project > Connect > "Session pooler" (port 5432)
+DATABASE_URL=postgresql://postgres.<proje-ref>:<sifre>@aws-0-<bolge>.pooler.supabase.com:5432/postgres
 NEXT_PUBLIC_SITE_URL=https://<canli-alan-adin>
 BOT_USER_AGENT=StoreDirectoryBot/1.0 (+https://<canli-alan-adin>/bot)
 ```
 
-Neon kullanıyorsan lokal postgres'e gerek yok:
+Neden Session pooler: direct connection yeni Supabase projelerinde IPv6-only,
+VPS'in IPv4 ise bağlanamaz. Transaction pooler (6543) ise Vercel içindir.
+
+Supabase kullanıyorsan lokal postgres'e gerek yok:
 
 ```bash
 docker compose up -d --build migrate crawler
@@ -134,6 +138,6 @@ Sonra `docker compose up -d`.
 
 - `restart: unless-stopped` açık; reboot sonrası kendi başına kalkar.
 - Log rotasyonu docker json-file ile: `max-size 50m`, `max-file 3`.
-- Neon otomatik yedekliyor; ek yedek script'i yok.
+- Supabase otomatik yedekliyor; ek yedek script'i yok.
 - Rate limit ve blacklist bellekte tutulur, restart sonrası sıfırlanır — bu
   kasıtlı: 24 saatlik blacklist yeniden öğrenilir.

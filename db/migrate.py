@@ -5,7 +5,7 @@ Kullanım:
     DATABASE_URL=postgres://... python db/migrate.py           # bekleyenleri uygula
     DATABASE_URL=postgres://... python db/migrate.py --status   # durum listesi
 
-Aynı runner hem lokal postgres'e hem Neon'a karşı çalışır.
+Aynı runner hem lokal postgres'e hem Supabase'e karşı çalışır.
 """
 from __future__ import annotations
 

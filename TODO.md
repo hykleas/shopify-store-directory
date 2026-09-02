@@ -7,7 +7,7 @@ Atlanan veya elle yapılması gereken işler.
 - [ ] **GitHub Actions workflow push'u** — `gh` token'ında `workflow` scope'u yok,
       `.github/workflows/ci.yml` taşıyan commit reddedildi. Repo ve kodun geri
       kalanı GitHub'da. Çözüm: `gh auth refresh -s workflow` sonra `git push`.
-- [ ] **Neon `DATABASE_URL`** — migration'lar (`db/001`–`004`) henüz gerçek bir
+- [ ] **Supabase `DATABASE_URL`** — migration'lar (`db/001`–`005`) henüz gerçek bir
       veritabanına uygulanmadı.
 - [ ] **`vercel login`** — proje bağlanmadı, env değişkenleri eklenmedi,
       production deploy alınmadı.

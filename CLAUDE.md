@@ -7,13 +7,14 @@ eden ve **katalog aktivitesini** izleyen ücretsiz araştırma platformu.
 
 | Katman | Seçim |
 |---|---|
-| DB | Neon (serverless Postgres) + `pgvector` + `pg_trgm` |
+| DB | Supabase (Postgres) + `pgvector` + `pg_trgm` |
 | Web + API | Next.js (App Router), TypeScript, Tailwind, Route Handlers |
-| DB erişimi (web) | `@neondatabase/serverless`, ham SQL — ORM yok |
+| DB erişimi (web) | `postgres` (postgres.js), ham SQL — ORM yok |
 | Crawler | Python 3.12, `httpx` (async), `asyncio`, `asyncpg` |
 | Queue | Postgres tabanlı job tablosu (`discovery_queue`) — Redis yok |
 | Kategorizasyon | `sentence-transformers` / `all-MiniLM-L6-v2`, lokal CPU |
 | Deploy | web → Vercel, crawler → tek VPS (Docker Compose) |
+| PostgREST | Kullanılmıyor. Tüm tablolarda policy'siz RLS açık (`005`), Supabase anon anahtarı hiçbir şey göremez. |
 
 ```
 /crawler   Python worker'ları (VPS)

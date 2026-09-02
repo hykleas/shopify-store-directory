@@ -19,7 +19,7 @@ _lock = asyncio.Lock()
 def _dsn() -> str:
     if not config.DATABASE_URL:
         raise RuntimeError("DATABASE_URL tanımlı değil.")
-    # asyncpg 'postgres://' ve 'postgresql://' kabul eder ama Neon'un
+    # asyncpg 'postgres://' ve 'postgresql://' kabul eder ama libpq'ya ozgu
     # '?sslmode=require&channel_binding=require' gibi ekleri libpq'ya özgü.
     dsn = config.DATABASE_URL
     for junk in ("&channel_binding=require", "?channel_binding=require"):
@@ -38,6 +38,9 @@ async def pool() -> asyncpg.Pool:
                     max_size=10,
                     command_timeout=60,
                     max_inactive_connection_lifetime=120,
+                    # Supabase pooler (pgbouncer) prepared statement'lari
+                    # baglantilar arasi tasimaz; cache kapali olmali.
+                    statement_cache_size=0,
                 )
                 log.info("postgres havuzu açıldı")
     return _pool

@@ -1,5 +1,6 @@
 # Lokal geliştirme + VPS crawler stack'i.
 # Web (Next.js) burada YOK — o Vercel'e deploy edilir.
+# .env'de DATABASE_URL varsa (Supabase) postgres servisi kullanilmaz.
 services:
   postgres:
     image: pgvector/pgvector:pg16

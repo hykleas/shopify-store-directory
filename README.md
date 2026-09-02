@@ -39,9 +39,9 @@ Kayıt olmadan gezilebilir. Pricing sayfası, plan, paywall veya kota yok.
                     │  product_spread      │──────┤  product_matches
                     └──────────────────────┘      │
                                                   ▼
-                                          ┌───────────────┐
-                                          │ Neon Postgres │
-                                          └───────────────┘
+                                          ┌────────────────┐
+                                          │ Supabase (PG)  │
+                                          └────────────────┘
                                                   │ okuma
                                                   ▼
                                    ┌───────────────────────────┐
@@ -51,14 +51,14 @@ Kayıt olmadan gezilebilir. Pricing sayfası, plan, paywall veya kota yok.
                                    └───────────────────────────┘
 ```
 
-Crawler tek bir VPS'te Docker Compose ile döner ve Neon'a **yazar**.
+Crawler tek bir VPS'te Docker Compose ile döner ve Supabase'e **yazar**.
 Web Vercel'de çalışır ve aynı veritabanından yalnızca **okur**.
 
 | Katman | Seçim |
 |---|---|
-| DB | Neon (serverless Postgres) + `pgvector` + `pg_trgm` |
+| DB | Supabase (Postgres) + `pgvector` + `pg_trgm` |
 | Web + API | Next.js 16 (App Router), TypeScript, Tailwind v4 |
-| DB erişimi (web) | `@neondatabase/serverless`, ham SQL — ORM yok |
+| DB erişimi (web) | `postgres` (postgres.js), ham SQL — ORM yok |
 | Crawler | Python 3.12, `httpx`, `asyncio`, `asyncpg` |
 | Kuyruk | Postgres tablosu (`discovery_queue`) — Redis yok |
 | Kategorizasyon | `sentence-transformers` / `all-MiniLM-L6-v2`, CPU |
@@ -81,7 +81,7 @@ cp .env.example .env
 
 | Değişken | Açıklama |
 |---|---|
-| `DATABASE_URL` | Postgres bağlantısı. Lokal: `postgresql://sd:sd@localhost:5433/storedir` |
+| `DATABASE_URL` | Postgres bağlantısı, aşağıdaki tabloya bak |
 | `NEXT_PUBLIC_SITE_URL` | Sitenin kanonik adresi (sitemap, metadata, bot iletişim linki) |
 | `BOT_USER_AGENT` | Crawler kimliği. İçinde `/bot` sayfasına giden bir URL olmalı |
 
@@ -90,6 +90,18 @@ Opsiyonel ayarlar (`crawler/core/config.py` içinde varsayılanları var):
 `DETECTOR_BATCH`, `INGEST_BATCH`, `EMBED_BATCH`, `NICHE_MIN_SCORE`,
 `PHASH_MAX_DISTANCE`, `ENABLE_CERTSTREAM`, `ENABLE_DETECTOR`, `ENABLE_INGEST`,
 `ENABLE_EMBED`, `ENABLE_SCHEDULER`.
+
+**Hangi Supabase bağlantı dizesi nerede?** Supabase panelinde
+*Project → Connect* altında üç seçenek var:
+
+| Nerede | Seçenek | Port | Neden |
+|---|---|---|---|
+| Vercel (web) | Transaction pooler | 6543 | Serverless, kısa ömürlü bağlantı |
+| VPS (crawler) | Session pooler | 5432 | Uzun ömürlü bağlantı, IPv4 |
+| Migration (`db/migrate.py`) | Session pooler | 5432 | `CREATE EXTENSION` gerekiyor |
+
+Direct connection (`db.<ref>.supabase.co:5432`) yeni projelerde IPv6-only;
+VPS'in IPv4 ise çalışmaz, o yüzden pooler kullan.
 
 ### 2. Veritabanı + crawler (Docker)
 
@@ -158,8 +170,8 @@ Uygulanmış bir dosyayı değiştirme — runner uyarır; yeni numara aç.
 
 ## Deploy
 
-- **Web** → Vercel. Root directory `web`. Env: `DATABASE_URL`,
-  `NEXT_PUBLIC_SITE_URL`, `BOT_USER_AGENT`.
+- **Web** → Vercel. Root directory `web`. Env: `DATABASE_URL` (transaction pooler,
+  port 6543), `NEXT_PUBLIC_SITE_URL`, `BOT_USER_AGENT`.
 - **Crawler** → tek VPS. Adım adım: [`crawler/DEPLOY.md`](crawler/DEPLOY.md).
 
 ## Yasal / etik
