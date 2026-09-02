@@ -116,37 +116,48 @@ def _thumb_url(url: str) -> str:
     return url + sep + "width=256"
 
 
+# Ilerleme sik sik kaydedilsin: gorsel indirmek yavas (CDN'de ~4 istek/sn) ve
+# tek dev batch'te hicbir sey yazilmazsa her kesinti tum isi cope atiyor.
+HASH_CHUNK = 200
+
+
 async def hash_missing_images(limit: int = 2000) -> int:
     rows = await db.fetch(PENDING_IMAGES_SQL, limit)
     if not rows:
         return 0
 
-    ok_ids: list[int] = []
-    ok_hashes: list[str] = []
-    bad_ids: list[int] = []
     sem = asyncio.Semaphore(8)
+    total_ok = 0
+    total_bad = 0
 
-    async def one(pid: int, url: str) -> None:
+    async def one(pid: int, url: str) -> tuple[int, str | None]:
         async with sem:
             r = await http.fetch(_thumb_url(url), retries=1, timeout=15, want_bytes=True)
             if r is None or not r.ok or not r.content or len(r.content) > 8_000_000:
-                bad_ids.append(pid)
-                return
+                return pid, None
             h = await asyncio.to_thread(_phash_bytes, r.content)
-            if h and len(h) == 16:
-                ok_ids.append(pid)
-                ok_hashes.append(h)
-            else:
-                bad_ids.append(pid)
+            return pid, (h if h and len(h) == 16 else None)
 
-    await asyncio.gather(*(one(r["id"], r["image_url"]) for r in rows))
+    for start in range(0, len(rows), HASH_CHUNK):
+        chunk = rows[start : start + HASH_CHUNK]
+        results = await asyncio.gather(*(one(r["id"], r["image_url"]) for r in chunk))
 
-    if ok_ids:
-        await db.execute(SET_HASH_SQL, ok_ids, ok_hashes)
-    if bad_ids:
-        await db.execute(MARK_BAD_SQL, bad_ids)
-    log.info("gorsel hash: %d basarili, %d atlandi", len(ok_ids), len(bad_ids))
-    return len(ok_ids)
+        ok_ids = [pid for pid, h in results if h]
+        ok_hashes = [h for _, h in results if h]
+        bad_ids = [pid for pid, h in results if not h]
+
+        if ok_ids:
+            await db.execute(SET_HASH_SQL, ok_ids, ok_hashes)
+        if bad_ids:
+            await db.execute(MARK_BAD_SQL, bad_ids)
+        total_ok += len(ok_ids)
+        total_bad += len(bad_ids)
+        log.info(
+            "gorsel hash: %d/%d islendi (basarili=%d atlandi=%d)",
+            start + len(chunk), len(rows), total_ok, total_bad,
+        )
+
+    return total_ok
 
 
 # --- 2) eslestirme ----------------------------------------------------------
