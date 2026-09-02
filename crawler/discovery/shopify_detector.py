@@ -83,8 +83,15 @@ def _currency(value: object) -> str | None:
     return None
 
 
-async def dns_is_shopify(domain: str) -> bool:
-    """A kaydi Shopify blogunda mi? Cozulemezse False."""
+# DNS sonucu uc durumlu: cozulmedi / cozuldu ama Shopify degil / Shopify blogu.
+DNS_UNRESOLVED = "unresolved"
+DNS_OTHER = "other"
+DNS_SHOPIFY = "shopify"
+
+
+async def dns_lookup(domain: str) -> str:
+    """A kaydina bakar. Domain hic cozulmuyorsa bosuna HTTP istegi atmayiz -
+    CT loglarindan gelen domainlerin buyuk kismi henuz yayinda degil."""
     loop = asyncio.get_running_loop()
     try:
         infos = await asyncio.wait_for(
@@ -92,16 +99,17 @@ async def dns_is_shopify(domain: str) -> bool:
             timeout=5,
         )
     except (TimeoutError, socket.gaierror, OSError, UnicodeError):
-        return False
+        return DNS_UNRESOLVED
+    if not infos:
+        return DNS_UNRESOLVED
     for info in infos:
-        addr = info[4][0]
         try:
-            ip = ipaddress.ip_address(addr)
+            ip = ipaddress.ip_address(info[4][0])
         except ValueError:
             continue
         if any(ip in net for net in SHOPIFY_NETS):
-            return True
-    return False
+            return DNS_SHOPIFY
+    return DNS_OTHER
 
 
 async def header_is_shopify(domain: str) -> bool:
@@ -153,14 +161,16 @@ async def save_store(domain: str, meta: dict) -> int | None:
 async def check_domain(domain: str) -> tuple[str, dict | None]:
     """('shopify'|'not_shopify', meta) dondurur."""
     # 1) DNS - ucuz, once bu.
-    dns_hit = await dns_is_shopify(domain)
+    dns = await dns_lookup(domain)
 
-    # 2) Header - DNS tutmadiysa da bakariz (custom CDN onunde olabilir).
-    header_hit = False
-    if not dns_hit:
-        header_hit = await header_is_shopify(domain)
+    # Hic cozulmuyorsa siteye gitmenin anlami yok: hem bos yere ~8sn
+    # bekliyorduk hem de gereksiz istek atiyorduk.
+    if dns == DNS_UNRESOLVED:
+        return "not_shopify", None
 
-    if not (dns_hit or header_hit):
+    # 2) Header - DNS Shopify blogunu gostermiyorsa da bakariz
+    #    (magaza bir CDN'in arkasinda olabilir).
+    if dns != DNS_SHOPIFY and not await header_is_shopify(domain):
         return "not_shopify", None
 
     # 3) meta.json ile dogrula ve verileri al.

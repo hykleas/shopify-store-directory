@@ -38,7 +38,7 @@ USER_AGENT: str = os.environ.get(
 HOST_MIN_INTERVAL_S: float = float(os.environ.get("HOST_MIN_INTERVAL_S", "1.0"))
 # 429/503 sonrası host kaç saniye blackliste alınsın.
 BLACKLIST_TTL_S: int = _int("BLACKLIST_TTL_S", 24 * 3600)
-GLOBAL_CONCURRENCY: int = _int("GLOBAL_CONCURRENCY", 20)
+GLOBAL_CONCURRENCY: int = _int("GLOBAL_CONCURRENCY", 40)
 # Paylasimli CDN'ler magaza sunucusu degil; 1 istek/sn kurali onlar icin
 # gorsel hash'lemeyi imkansiz kilardi (bkz. DECISIONS.md #13).
 CDN_HOSTS: frozenset[str] = frozenset(
@@ -50,7 +50,7 @@ HTTP_RETRIES: int = _int("HTTP_RETRIES", 3)
 
 # --- worker ayarları ---------------------------------------------------------
 DETECTOR_BATCH: int = _int("DETECTOR_BATCH", 200)
-DETECTOR_CONCURRENCY: int = _int("DETECTOR_CONCURRENCY", 20)
+DETECTOR_CONCURRENCY: int = _int("DETECTOR_CONCURRENCY", 40)
 INGEST_BATCH: int = _int("INGEST_BATCH", 25)
 INGEST_CONCURRENCY: int = _int("INGEST_CONCURRENCY", 8)
 INGEST_MAX_PAGES: int = _int("INGEST_MAX_PAGES", 20)
